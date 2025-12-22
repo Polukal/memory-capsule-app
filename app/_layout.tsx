@@ -1,15 +1,17 @@
 import { Stack } from "expo-router";
-import { View } from "react-native";
+import { StatusBar } from "react-native";
 
-export default function Layout() {
+export default function RootLayout() {
   return (
-    <View style={{ flex: 1, backgroundColor: "white" }}>
+    <>
+      <StatusBar barStyle="dark-content" />
       <Stack
         screenOptions={{
-          headerShown: false,
+          headerStyle: { backgroundColor: "white" },
+          headerTitleStyle: { fontWeight: "600", fontSize: 20 },
           contentStyle: { backgroundColor: "white" },
         }}
       />
-    </View>
+    </>
   );
 }
