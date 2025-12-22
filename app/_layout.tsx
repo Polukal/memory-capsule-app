@@ -1,17 +1,20 @@
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { StatusBar } from "react-native";
+import { useColorScheme } from "react-native";
 
 export default function RootLayout() {
+  const scheme = useColorScheme();
+
   return (
-    <>
-      <StatusBar barStyle="dark-content" />
+    <ThemeProvider value={scheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "white" },
-          headerTitleStyle: { fontWeight: "600", fontSize: 20 },
-          contentStyle: { backgroundColor: "white" },
+          headerStyle: { backgroundColor: scheme === "dark" ? "#000" : "#fff" },
+          headerTitleStyle: { fontWeight: "700", fontSize: 22 },
+          headerTintColor: scheme === "dark" ? "#fff" : "#000",
+          animation: "fade",
         }}
       />
-    </>
+    </ThemeProvider>
   );
 }

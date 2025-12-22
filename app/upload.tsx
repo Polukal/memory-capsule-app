@@ -1,81 +1,54 @@
-import * as ImagePicker from 'expo-image-picker';
-import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Button, Image, View } from "react-native";
-import { supabase } from '../src/lib/supabase';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useColorScheme,
+  View
+} from "react-native";
 
-export default function UploadScreen() {
-  const [image, setImage] = useState(null);
-  const [uploading, setUploading] = useState(false);
+export default function Upload() {
+  const scheme = useColorScheme();
+
+  const [localImage, setLocalImage] = useState(null);
 
   async function pick() {
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-    });
-
-    if (!res.canceled) {
-      setImage(res.assets[0]);
-    }
-  }
-
-  async function upload() {
-    if (!image) return;
-
-    setUploading(true);
-
-    const fileExt = image.uri.split(".").pop();
-    const filePath = `${Date.now()}.${fileExt}`;
-
-    const file = await fetch(image.uri);
-    const blob = await file.blob();
-
-    let { error } = await supabase
-      .storage
-      .from("user-uploads")
-      .upload(filePath, blob);
-
-    if (error) {
-      setUploading(false);
-      alert(error.message);
-      return;
-    }
-
-    // insert into DB
-    const { data: row, error: insertErr } = await supabase
-      .from("photos")
-      .insert({
-        album_id: null,
-        file_path: filePath,
-        status: "uploaded",
-      })
-      .select()
-      .single();
-
-    await fetch(
-      `${EXPO_PUBLIC_SUPABASE_URL}/functions/v1/animatePhoto`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          photo_id: row.id,
-          model: "v1.6"
-        })
-      }
-    );
-
-    setUploading(false);
-    router.push("/home");
+    const result = await ImagePicker.launchImageLibraryAsync();
+    if (!result.canceled) setLocalImage(result.assets[0]);
   }
 
   return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Button title="Pick Image" onPress={pick}/>
-      {image && <Image source={{ uri: image.uri }} style={{ width: 300, height: 300 }}/>}
-      <Button title="Upload + Animate" disabled={!image || uploading} onPress={upload}/>
+    <View style={[styles.container, scheme === "dark" && styles.dark]}>
+      <Text style={[styles.title, scheme === "dark" && styles.darkText]}>
+        Upload Photo
+      </Text>
+
+      <TouchableOpacity onPress={pick} style={styles.button}>
+        <Text style={styles.buttonText}>Pick Image</Text>
+      </TouchableOpacity>
+
+      {localImage && (
+        <Image
+          source={{ uri: localImage.uri }}
+          style={{ width: "100%", height: 380, borderRadius: 12 }}
+        />
+      )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20 },
+  dark: { backgroundColor: "#000" },
+  darkText: { color: "#fff" },
+  title: { fontSize: 26, marginBottom: 20, fontWeight: "700" },
+  button: {
+    backgroundColor: "#246bfd",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 30,
+  },
+  buttonText: { fontSize: 18, textAlign: "center", color: "white", fontWeight: "600" },
+});

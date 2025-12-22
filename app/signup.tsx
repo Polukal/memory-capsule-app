@@ -1,108 +1,106 @@
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { useState } from "react";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  useColorScheme,
+  View
 } from "react-native";
-import { supabase } from "../src/lib/supabase";
 
 export default function Signup() {
+
+  const scheme = useColorScheme();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  async function signup() {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) Alert.alert("Signup Failed", error.message);
-    else {
-      Alert.alert("Success", "Account created!");
-      router.replace("/login");
-    }
+  function signup() {
+    router.replace("/home");
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <Text style={styles.title}>Create Account</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={[styles.container, scheme === "dark" && styles.dark]}>
 
-      <TextInput
-        placeholder="Email"
-        placeholderTextColor="#808080"
-        style={styles.input}
-        autoCapitalize="none"
-        onChangeText={setEmail}
-      />
+        <Text style={[styles.title, scheme === "dark" && styles.darkText]}>
+          Create Account
+        </Text>
 
-      <TextInput
-        placeholder="Password"
-        placeholderTextColor="#808080"
-        secureTextEntry
-        style={styles.input}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          placeholder="Full Name"
+          style={[styles.input, scheme === "dark" && styles.inputDark]}
+          placeholderTextColor={scheme === "dark" ? "#888" : "#777"}
+          value={name}
+          onChangeText={setName}
+        />
 
-      <TouchableOpacity style={styles.primaryBtn} onPress={signup}>
-        <Text style={styles.primaryText}>Sign Up</Text>
-      </TouchableOpacity>
+        <TextInput
+          placeholder="Email"
+          style={[styles.input, scheme === "dark" && styles.inputDark]}
+          placeholderTextColor={scheme === "dark" ? "#888" : "#777"}
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.linkText}>← Back</Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+        <TextInput
+          placeholder="Password"
+          secureTextEntry
+          style={[styles.input, scheme === "dark" && styles.inputDark]}
+          placeholderTextColor={scheme === "dark" ? "#888" : "#777"}
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        <TouchableOpacity style={styles.button} onPress={signup}>
+          <Text style={styles.buttonText}>Continue</Text>
+        </TouchableOpacity>
+
+        <Link href="/login" style={styles.link}>
+          <Text style={[styles.linkText, scheme === "dark" && styles.darkText]}>
+            Already have an account?
+          </Text>
+        </Link>
+
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "white",
-    justifyContent: "center",
-    padding: 26,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 40,
-    textAlign: "center",
-  },
+  container: { flex: 1, padding: 30, justifyContent: "center" },
+  dark: { backgroundColor: "#000" },
+  darkText: { color: "#fff" },
+
+  title: { fontSize: 32, fontWeight: "700", marginBottom: 30, textAlign: "center" },
+
   input: {
+    width: "100%",
     borderWidth: 1,
-    borderColor: "#d5d5d5",
+    borderColor: "#aaa",
+    padding: 15,
     borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: "#fafafa",
+    marginBottom: 18,
+    fontSize: 18,
     color: "#000",
-    marginBottom: 18,
   },
-  primaryBtn: {
-    backgroundColor: "#34A853",
-    paddingVertical: 14,
-    borderRadius: 10,
-    marginBottom: 18,
+
+  inputDark: { backgroundColor: "#222", color: "#fff", borderColor: "#444" },
+
+  button: {
+    backgroundColor: "#246bfd",
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 25,
   },
-  primaryText: {
-    color: "white",
-    fontSize: 17,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  linkText: {
-    textAlign: "center",
-    fontSize: 15,
-    color: "#1A73E8",
-    fontWeight: "500",
-    marginTop: 10,
-  },
+
+  buttonText: { color: "#fff", textAlign: "center", fontSize: 18 },
+
+  link: { alignSelf: "center" },
+  linkText: { fontSize: 18, color: "#246bfd", marginTop: 15 },
 });
