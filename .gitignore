@@ -1,43 +1,59 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# --- ENVIRONMENT VARIABLES ---
+.env
+.env.*
+!.env.example
 
-# dependencies
+# --- NODE ---
 node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+pnpm-lock.yaml
 
-# Expo
+# --- EXPO / METRO ---
 .expo/
-dist/
-web-build/
-expo-env.d.ts
+.expo-shared/
+.expo/web/cache/
+.expo/web/dist/
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
+# --- MACOS ---
 .DS_Store
-*.pem
 
-# local env files
-.env*.local
+# --- OS JUNK ---
+Thumbs.db
+*.log
 
-# typescript
+# --- TYPESCRIPT ---
 *.tsbuildinfo
 
-app-example
+# --- BUNDLER OUTPUT ---
+dist/
+build/
+web-build/
+android/
+ios/
 
-# generated native folders
-/ios
-/android
+# --- METRO CACHE ---
+metro-cache/
+.expo/web/cache/
+
+# --- IDE FILES ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- CACHE DIRECTORIES ---
+.cache/
+.npm/
+.yarn/
+
+# --- MISC ---
+coverage/
+tmp/
+*.tmp
+
+# --- SUPABASE ---
+supabase/.temp/
+supabase/.config/
