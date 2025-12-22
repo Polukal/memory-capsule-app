@@ -1,6 +1,8 @@
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Keyboard,
   StyleSheet,
   Text,
@@ -10,22 +12,73 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+import { supabase } from "../src/lib/supabase";
 
 export default function Login() {
-
   const scheme = useColorScheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function login() {
-    router.replace("/home");
+  async function login() {
+    // Validate input
+    if (!email.trim()) {
+      Alert.alert("Validation Error", "Please enter your email");
+      return;
+    }
+
+    if (!password.trim()) {
+      Alert.alert("Validation Error", "Please enter your password");
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert("Validation Error", "Please enter a valid email address");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        // Successfully logged in
+        router.replace("/home");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+
+      // User-friendly error messages
+      let errorMessage = "Failed to login. Please try again.";
+
+      if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message?.includes("Email not confirmed")) {
+        errorMessage = "Please verify your email address before logging in.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert("Login Failed", errorMessage);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={[styles.container, scheme === "dark" && styles.dark]}>
-
         <Text style={[styles.title, scheme === "dark" && styles.darkText]}>Login</Text>
 
         <TextInput
@@ -34,6 +87,10 @@ export default function Login() {
           placeholderTextColor={scheme === "dark" ? "#888" : "#777"}
           value={email}
           onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          editable={!loading}
         />
 
         <TextInput
@@ -43,10 +100,20 @@ export default function Login() {
           placeholderTextColor={scheme === "dark" ? "#888" : "#777"}
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
+          editable={!loading}
         />
 
-        <TouchableOpacity style={styles.button} onPress={login}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
+          onPress={login}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <Link href="/signup" style={styles.link}>
@@ -54,14 +121,12 @@ export default function Login() {
             Create new account
           </Text>
         </Link>
-
       </View>
     </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-
   container: { flex: 1, padding: 30, justifyContent: "center" },
   dark: { backgroundColor: "#000" },
   darkText: { color: "#fff" },
@@ -86,6 +151,10 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 12,
     marginBottom: 25,
+  },
+
+  buttonDisabled: {
+    backgroundColor: "#9ca3af",
   },
 
   buttonText: { color: "#fff", textAlign: "center", fontSize: 18 },
