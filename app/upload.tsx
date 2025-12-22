@@ -1,60 +1,81 @@
-import * as ImagePicker from "expo-image-picker";
+import * as ImagePicker from 'expo-image-picker';
+import { router } from "expo-router";
 import { useState } from "react";
-import { Alert, Button, Image, View } from "react-native";
-import { supabase } from "../src/lib/supabase";
+import { Button, Image, View } from "react-native";
+import { supabase } from '../src/lib/supabase';
 
-export default function Upload() {
+export default function UploadScreen() {
+  const [image, setImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
-  const [image, setImage] = useState<any>(null);
-
-  async function pickImage() {
-    const result = await ImagePicker.launchImageLibraryAsync({
+  async function pick() {
+    const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      quality: 0.9,
     });
 
-    if (!result.canceled) setImage(result.assets[0]);
+    if (!res.canceled) {
+      setImage(res.assets[0]);
+    }
   }
 
   async function upload() {
+    if (!image) return;
 
-    const session = await supabase.auth.getSession();
-    const user = session.data.session?.user;
-    if (!user) return;
+    setUploading(true);
 
-    const form = new FormData();
+    const fileExt = image.uri.split(".").pop();
+    const filePath = `${Date.now()}.${fileExt}`;
 
-    form.append("album_id", user.id);
-    form.append("user_id", user.id);
-    form.append("file", {
-      uri: image.uri,
-      name: "upload.jpg",
-      type: "image/jpeg",
-    } as any);
+    const file = await fetch(image.uri);
+    const blob = await file.blob();
 
-    const res = await fetch(
-      `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/uploadPhoto`,
+    let { error } = await supabase
+      .storage
+      .from("user-uploads")
+      .upload(filePath, blob);
+
+    if (error) {
+      setUploading(false);
+      alert(error.message);
+      return;
+    }
+
+    // insert into DB
+    const { data: row, error: insertErr } = await supabase
+      .from("photos")
+      .insert({
+        album_id: null,
+        file_path: filePath,
+        status: "uploaded",
+      })
+      .select()
+      .single();
+
+    await fetch(
+      `${EXPO_PUBLIC_SUPABASE_URL}/functions/v1/animatePhoto`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.data.session.access_token}` },
-        body: form,
+        headers: {
+          "Authorization": `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          photo_id: row.id,
+          model: "v1.6"
+        })
       }
     );
 
-    const json = await res.json();
-
-    if (!json.success) return Alert.alert("Upload failed");
-
-    Alert.alert("Uploaded!", `photo_id: ${json.photo.id}`);
+    setUploading(false);
+    router.push("/home");
   }
 
   return (
-    <View style={{ flex:1, padding:20 }}>
-      <Button title="Pick Photo" onPress={pickImage} />
-      {image && (
-        <Image source={{ uri: image.uri }} style={{ width:"100%", height:300, marginTop:20 }} />
-      )}
-      <Button title="Upload" onPress={upload} />
+    <View style={{ flex: 1, padding: 20 }}>
+      <Button title="Pick Image" onPress={pick}/>
+      {image && <Image source={{ uri: image.uri }} style={{ width: 300, height: 300 }}/>}
+      <Button title="Upload + Animate" disabled={!image || uploading} onPress={upload}/>
     </View>
   );
 }
